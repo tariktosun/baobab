@@ -21,7 +21,9 @@ E2offset = 19;
 F = linspace(1/Fs, 1000, 2^12);
 %%
 % Generate 4 seconds of zeros to be used to generate the guitar notes.
-x = zeros(Fs*4, 1);
+%x = zeros(Fs*4, 1);
+x = square((1:Fs*10)./10);
+
 
 %% Playing a Note on an Open String
 %  When a guitar string is plucked or strummed, it produces a sound wave
@@ -50,7 +52,7 @@ ylabel('Magnitude (dB)');
 % with random numbers. Then we filter zeros using these initial states.
 % This forces the random states to exit the filter shaped into the
 % harmonics.
-zi = rand(max(length(b),length(a))-1,1);
+zi = zeros(max(length(b),length(a))-1,1);
 note = filter(b, a, x, zi);
 %%
 % Normalize the sound for the audioplayer.
