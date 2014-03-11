@@ -1,4 +1,4 @@
-function y = myPluck(L,S,r,x,c,viz)
+function y = myPluck(L,S,r,x,c,f,mult,viz)
 % y = pluck(L,S,r,x,c,viz)   Plucked string synthesis via pair of waveguide 'rails'
 %    L is the length of each waveguide in samples.  
 %    S is the number of output samples to produce (default 10000).
@@ -7,6 +7,8 @@ function y = myPluck(L,S,r,x,c,viz)
 %      if x is a scalar value, it is taken as the pluck point as a
 %      proportion of the string length (default 0.5).
 %    c is the time-varying clamp location.  Defaults to L for all time.
+%    f is the time-varying forcing function
+%    mult is the pitch resolution multiplier
 %    viz if present and nonzero plots waves & string at each samfple time.
 
 % Written by Tarik Tosun.  Based heavily on 2001 code from columbia.
@@ -25,15 +27,23 @@ if nargin < 4 | length(x) == 0
   x = 0.5;
 end
 if nargin < 5 | length(c) == 0
-    c = ones(1,S); % the nut is at index 1.
+    c = ones(1,S*mult); % the nut is at index 1.
 end
-if nargin < 6
+if nargin < 6 | length(f) == 0
+    f = zeros(1,S*mult);
+end
+if nargin < 7 | length(mult) == 0
+    mult = 1;
+end
+if nargin < 8
   viz = 0;
 end
 
 %% initialization
 % where to read output from - residual at bridge in this case
 pickup = L;
+% where to apply forcing function
+forceLoc = round(L/2);
 
 % Is r a filter or a mid-point?
 if length(r) == 1
@@ -80,7 +90,7 @@ pkval = max(abs(x));
 ii = 0:(L-1);
 
 %% Execute waveguide
-for t = 1:S
+for t = 1:S*mult
   
   if viz
     % Plot left and right-moving waves, and their sum
@@ -89,6 +99,10 @@ for t = 1:S
     axis([0 L-1 -pkval pkval]);
     pause
   end
+  
+  % Apply forcing function:
+  stringLeft(forceLoc) = stringLeft(forceLoc) + f(t);
+  stringRight(forceLoc) = stringRight(forceLoc) + f(t);
   
   % Clamp the string appropriately:
   left = stringLeft(c(t):end);
@@ -101,6 +115,8 @@ for t = 1:S
 %[stringLeft, stringRight] = stepWaveguide(stringLeft, stringRight, r);
 
   % Read output
-  y(t) = stringLeft(pickup) + stringRight(pickup);
+  if mod(t,mult) == 0
+    y(t/mult) = stringLeft(pickup) + stringRight(pickup);
+  end
 
 end
